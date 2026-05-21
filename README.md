@@ -31,3 +31,26 @@ Ensure you have the following installed on your local machine:
 1. **Clone the repository:**
    ```bash
    git clone [https://github.com/yourusername/taskmanager.git](https://github.com/yourusername/taskmanager.git)
+
+
+Developer Remarks on app guideline 
+
+ Here is a step-by-step guide on how to get around:
+
+### 1. The Starting Point (Landing Page)
+When you first open the application, you will arrive at our welcome screen. From here, click the **Get Started** button in the top right corner to begin. 
+
+### 2. Choosing Your Path (Log In)
+TaskMaster is split into two distinct workspaces to keep things organized and secure:
+* **For Managers:** Use the Manager Portal to log in or create an account. This grants you the ability to oversee the team and delegate work.
+* **For Team Members:** Use the standard User Portal to log in. Your view is focused entirely on your personal assignments.
+
+### 3. The Manager Workspace (`/dashboard`)
+If you log in as a Manager, you will be taken to your command center. 
+* **Assigning Work:** Click the prominent **+ Assign New Task** button to open a simple form. Here, you can title a task, set a deadline, choose a priority level, and select a team member from the dropdown menu to assign the work.
+* **Tracking Progress:** Use the **Pending** and **Completed** tabs to seamlessly flip between what your team is currently working on and what has already crossed the finish line.
+
+### 4. The Team Member Workspace (`/userdashboard`)
+If you log in as a standard User, your dashboard acts as your personal to-do list. 
+* **Your Daily Focus:** The top of your screen provides a quick, visual count of your pending versus completed tasks for the day.
+* **Taking Action:** Under the **Action Required** section, you will see the specific tasks your manager has assigned to you. Once you finish a task, simply click **Mark Complete ✓**, and it will automatically move down to your completed history.
