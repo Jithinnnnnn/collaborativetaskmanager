@@ -33,52 +33,13 @@ interface AppState {
 
 export const useStore = create<AppState>((set) => ({
   // --- Auth State ---
-  // For testing the dashboard, we will temporarily set a default logged-in manager.
-  // Change 'user' to null when you are ready to test the login screen again.
-  user: {
-    id: 'user_123',
-    name: 'Demo Manager',
-    email: 'admin@taskmaster.com',
-    role: 'manager',
-    token: 'mock-token'
-  },
-  isAuthenticated: true,
+  user: null,
+  isAuthenticated: false,
   login: (userData) => set({ user: userData, isAuthenticated: true }),
-  logout: () => set({ user: null, isAuthenticated: false }),
+  logout: () => set({ user: null, isAuthenticated: false, tasks: [] }),
 
-  // --- Task State (with mock initial data matching your new design) ---
-  tasks: [
-    { 
-      id: 't1', 
-      title: 'Design MongoDB Schema', 
-      status: 'completed', 
-      priority: 'high',
-      deadline: '2026-05-15T00:00:00.000Z',
-      updates: ['Created initial schema draft', 'Approved by lead developer'],
-      assignedTo: 'user_123', 
-      createdBy: 'user_123' 
-    },
-    { 
-      id: 't2', 
-      title: 'Implement Express API endpoints', 
-      status: 'in-progress', 
-      priority: 'high',
-      deadline: '2026-05-25T00:00:00.000Z',
-      updates: ['Started working on /auth routes'],
-      assignedTo: 'user_123', 
-      createdBy: 'user_123' 
-    },
-    { 
-      id: 't3', 
-      title: 'Update Zustand Store', 
-      status: 'pending', 
-      priority: 'medium',
-      deadline: '2026-05-30T00:00:00.000Z',
-      updates: [],
-      assignedTo: 'user_123', 
-      createdBy: 'user_123' 
-    }
-  ],
+  // --- Task State ---
+  tasks: [],
   
   addTask: (task) => set((state) => ({
     tasks: [...state.tasks, { ...task, id: Math.random().toString(36).substr(2, 9) }]

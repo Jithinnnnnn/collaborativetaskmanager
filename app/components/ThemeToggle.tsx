@@ -12,16 +12,39 @@ export default function ThemeToggle() {
 
   // Return a placeholder of the exact same size to prevent layout shift on load
   if (!mounted) {
-    return <div className="w-[104px] h-[40px]"></div>; 
+    return <div className="w-[160px] h-[44px]"></div>; 
   }
 
   return (
-    <button 
-      onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-      className="px-4 py-2 rounded-xl bg-[#f3f4f6] dark:bg-[#1f2937] text-gray-700 dark:text-gray-300 font-medium shadow-[4px_4px_8px_#d1d5db,-4px_-4px_8px_#ffffff] dark:shadow-[4px_4px_8px_#0b0f19,-4px_-4px_8px_#334155] hover:shadow-[inset_4px_4px_8px_#d1d5db,inset_-4px_-4px_8px_#ffffff] dark:hover:shadow-[inset_4px_4px_8px_#0b0f19,inset_-4px_-4px_8px_#334155] transition-all duration-300 flex items-center gap-2"
-      aria-label="Toggle Dark Mode"
-    >
-      {theme === 'dark' ? '☀️ Light' : '🌙 Dark'}
-    </button>
+    <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-xl p-1 shadow-inner">
+      <button 
+        onClick={() => setTheme('light')}
+        className={`px-3 py-2 rounded-lg font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
+          theme === 'light' 
+            ? 'bg-white text-gray-900 shadow-md' 
+            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+        }`}
+        aria-label="Switch to Light Mode"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+        </svg>
+        Light
+      </button>
+      <button 
+        onClick={() => setTheme('dark')}
+        className={`px-3 py-2 rounded-lg font-medium text-sm transition-all duration-300 flex items-center gap-1.5 ${
+          theme === 'dark' 
+            ? 'bg-gray-700 text-white shadow-md' 
+            : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+        }`}
+        aria-label="Switch to Dark Mode"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+        </svg>
+        Dark
+      </button>
+    </div>
   );
 }

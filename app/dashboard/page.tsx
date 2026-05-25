@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import ThemeToggle from "../components/ThemeToggle";
+import Navbar from "../components/Navbar";
 
 export default function ManagerDashboard() {
   const [isMounted, setIsMounted] = useState(false);
@@ -19,6 +20,8 @@ export default function ManagerDashboard() {
   const [users, setUsers] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState<"pending" | "completed">("pending");
   const [fetchError, setFetchError] = useState(""); // Added state to show fetch errors in UI
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   // Task Creation Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,7 +37,19 @@ export default function ManagerDashboard() {
     }
   }, []);
 
-  const fetchDashboardData = async (managerId: string) => {
+  // Auto-refresh tasks every 5 seconds when manager is logged in
+  useEffect(() => {
+    if (!manager) return;
+
+    const intervalId = setInterval(() => {
+      fetchDashboardData(manager.id);
+    }, 5000); // Refresh every 5 seconds
+
+    return () => clearInterval(intervalId); // Cleanup on unmount
+  }, [manager]);
+
+  const fetchDashboardData = async (managerId: string, showRefreshIndicator = false) => {
+    if (showRefreshIndicator) setIsRefreshing(true);
     setFetchError("");
     try {
       // NOTE: Ensure your folder is named app/api/tasks/ (plural)
@@ -52,10 +67,19 @@ export default function ManagerDashboard() {
       
       if (userData.users) setUsers(userData.users);
       if (taskData.tasks) setTasks(taskData.tasks);
+      setLastUpdated(new Date());
       
     } catch (error: any) {
       console.error(error);
       setFetchError("Could not load dashboard data. Please ensure your API folders are named correctly (/api/tasks and /api/users).");
+    } finally {
+      if (showRefreshIndicator) setIsRefreshing(false);
+    }
+  };
+
+  const handleManualRefresh = () => {
+    if (manager) {
+      fetchDashboardData(manager.id, true);
     }
   };
 
@@ -133,34 +157,28 @@ export default function ManagerDashboard() {
   if (!manager) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950 p-6 relative">
-        <nav className="absolute top-0 w-full p-6 flex justify-between items-center z-20">
-          <div className="flex items-center gap-2">
-            <span className="text-xl text-blue-600">❖</span>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">TaskMaster Manager</h1>
-          </div>
-          <ThemeToggle />
-        </nav>
+        <Navbar />
 
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-2xl border border-gray-100 dark:border-gray-800">
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl p-8 shadow-2xl border border-gray-100 dark:border-gray-800 mt-20">
           <div className="text-center mb-8">
             <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Manager Portal</h2>
-            <p className="text-gray-500 text-sm mt-2">{isLogin ? "Sign in to manage your team." : "Register as a new manager."}</p>
+            <p className="text-gray-500 dark:text-gray-400 text-sm mt-2">{isLogin ? "Sign in to manage your team." : "Register as a new manager."}</p>
           </div>
 
           <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1 mb-6">
-            <button type="button" onClick={() => { setIsLogin(true); setAuthError(""); }} className={`flex-1 py-2 text-sm font-semibold rounded-md ${isLogin ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow" : "text-gray-500"}`}>Login</button>
-            <button type="button" onClick={() => { setIsLogin(false); setAuthError(""); }} className={`flex-1 py-2 text-sm font-semibold rounded-md ${!isLogin ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow" : "text-gray-500"}`}>Register</button>
+            <button type="button" onClick={() => { setIsLogin(true); setAuthError(""); }} className={`flex-1 py-2 text-sm font-semibold rounded-md ${isLogin ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow" : "text-gray-500 dark:text-gray-400"}`}>Login</button>
+            <button type="button" onClick={() => { setIsLogin(false); setAuthError(""); }} className={`flex-1 py-2 text-sm font-semibold rounded-md ${!isLogin ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow" : "text-gray-500 dark:text-gray-400"}`}>Register</button>
           </div>
 
-          {authError && <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg text-center">{authError}</div>}
+          {authError && <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 text-sm rounded-lg text-center">{authError}</div>}
 
           <form onSubmit={handleAuth} className="flex flex-col gap-4">
             {!isLogin && (
-              <input type="text" placeholder="Full Name" value={authForm.name} onChange={(e) => setAuthForm({...authForm, name: e.target.value})} required className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700" />
+              <input type="text" placeholder="Full Name" value={authForm.name} onChange={(e) => setAuthForm({...authForm, name: e.target.value})} required className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500" />
             )}
-            <input type="email" placeholder="Work Email" value={authForm.email} onChange={(e) => setAuthForm({...authForm, email: e.target.value})} required className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700" />
-            <input type="password" placeholder="Password" value={authForm.password} onChange={(e) => setAuthForm({...authForm, password: e.target.value})} required className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700" />
-            <button type="submit" disabled={isLoading} className="w-full mt-2 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50">
+            <input type="email" placeholder="Work Email" value={authForm.email} onChange={(e) => setAuthForm({...authForm, email: e.target.value})} required className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500" />
+            <input type="password" placeholder="Password" value={authForm.password} onChange={(e) => setAuthForm({...authForm, password: e.target.value})} required className="w-full px-4 py-3 rounded-lg bg-gray-50 dark:bg-gray-800 text-gray-900 dark:text-white border border-gray-200 dark:border-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-400 dark:placeholder-gray-500" />
+            <button type="submit" disabled={isLoading} className="w-full mt-2 py-3 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors">
               {isLoading ? "Processing..." : (isLogin ? "Sign In" : "Register")}
             </button>
           </form>
@@ -178,31 +196,67 @@ export default function ManagerDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-950 transition-colors duration-500 relative">
-      <nav className="w-full bg-white/90 dark:bg-gray-900/90 backdrop-blur-md border-b border-gray-200 dark:border-gray-800 sticky top-0 z-30">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl text-blue-600">❖</span>
-            <h1 className="text-xl font-bold text-gray-900 dark:text-white">Manager Workspace</h1>
-          </div>
-          <div className="flex items-center gap-6">
-            <ThemeToggle />
-            <div className="hidden md:block text-right">
-              <p className="text-sm font-bold text-gray-900 dark:text-white">{manager.name}</p>
+      <Navbar />
+      
+      {/* Manager Info Bar with Logout */}
+      <div className="fixed top-20 w-full z-40 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-800 shadow-sm">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex justify-between items-center">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center text-white text-lg font-bold">
+              {manager.name.charAt(0).toUpperCase()}
             </div>
-            <button onClick={handleLogout} className="text-sm font-semibold text-red-600 hover:bg-red-50 p-2 rounded-lg">Sign Out</button>
+            <div>
+              <p className="text-sm font-bold text-gray-900 dark:text-white">{manager.name}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">Manager Dashboard</p>
+            </div>
           </div>
+          
+          <button 
+            onClick={handleLogout} 
+            className="px-5 py-2.5 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors duration-300 flex items-center gap-2 shadow-md hover:shadow-lg"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+            Logout
+          </button>
         </div>
-      </nav>
+      </div>
 
-      <main className="max-w-5xl mx-auto px-6 py-12">
-        <header className="flex justify-between items-end mb-10">
+      <main className="max-w-5xl mx-auto px-6 py-12 pt-40">
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-10 gap-4">
           <div>
             <h2 className="text-4xl font-extrabold text-gray-900 dark:text-white">Team Tasks</h2>
             <p className="text-gray-500 mt-2">You have created {tasks.length} tasks total.</p>
+            {lastUpdated && (
+              <p className="text-xs text-gray-400 mt-1">
+                Last updated: {lastUpdated.toLocaleTimeString()}
+              </p>
+            )}
           </div>
-          <button onClick={() => setIsModalOpen(true)} className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700">
-            + Assign New Task
-          </button>
+          <div className="flex gap-3">
+            <button 
+              onClick={handleManualRefresh} 
+              disabled={isRefreshing}
+              className="px-4 py-3 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 font-bold rounded-xl shadow hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+            >
+              <svg 
+                className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`} 
+                fill="none" 
+                stroke="currentColor" 
+                viewBox="0 0 24 24"
+              >
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+              </svg>
+              {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
+            <button 
+              onClick={() => setIsModalOpen(true)} 
+              className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl shadow-lg hover:bg-blue-700 transition-colors"
+            >
+              + Assign New Task
+            </button>
+          </div>
         </header>
 
         {/* Display Fetch Errors if they occur */}
@@ -224,20 +278,67 @@ export default function ManagerDashboard() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {displayedTasks.map(task => (
-            <div key={task._id} className="p-6 bg-white dark:bg-gray-900 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-800">
-              <h3 className="text-xl font-bold text-gray-900 dark:text-white">{task.title}</h3>
-              <p className="text-gray-500 text-sm mb-4">{task.description}</p>
-              <div className="flex justify-between items-center text-sm">
-                <span className="font-bold text-blue-600">👤 {task.assignedTo?.name || "Unknown User"}</span>
-                <span className="px-3 py-1 bg-gray-100 dark:bg-gray-800 rounded-full font-bold capitalize">{task.priority} Priority</span>
-              </div>
-              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-800 text-xs text-gray-400 font-bold">
-                DEADLINE: {new Date(task.deadline).toLocaleDateString()}
-              </div>
-            </div>
-          ))}
-          {displayedTasks.length === 0 && !fetchError && <p className="text-gray-500">No tasks in this view.</p>}
+          <AnimatePresence mode="popLayout">
+            {displayedTasks.map(task => (
+              <motion.div 
+                key={task._id} 
+                layout
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.3 }}
+                className="p-6 bg-white dark:bg-gray-900 rounded-3xl shadow-lg border border-gray-100 dark:border-gray-800 hover:shadow-xl transition-shadow"
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <h3 className="text-xl font-bold text-gray-900 dark:text-white flex-1">{task.title}</h3>
+                  {task.status === "completed" && (
+                    <div className="w-8 h-8 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 ml-2">
+                      <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+                <p className="text-gray-500 dark:text-gray-400 text-sm mb-4">{task.description || "No description provided"}</p>
+                <div className="flex justify-between items-center text-sm mb-4">
+                  <span className="font-bold text-blue-600 dark:text-blue-400">👤 {task.assignedTo?.name || "Unknown User"}</span>
+                  <span className={`px-3 py-1 rounded-full font-bold capitalize text-xs ${
+                    task.priority === 'high' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                    task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                    'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
+                  }`}>
+                    {task.priority} Priority
+                  </span>
+                </div>
+                <div className="pt-4 border-t border-gray-100 dark:border-gray-800">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-400 dark:text-gray-500 font-bold">
+                      DEADLINE: {new Date(task.deadline).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                    {task.status === "completed" && (
+                      <span className="text-green-600 dark:text-green-400 font-bold">✓ COMPLETED</span>
+                    )}
+                  </div>
+                  {task.updates && task.updates.length > 0 && (
+                    <p className="text-xs text-gray-400 dark:text-gray-500 italic mt-2">
+                      {task.updates[task.updates.length - 1]}
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+          {displayedTasks.length === 0 && !fetchError && (
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="col-span-full text-center py-12 bg-white/60 dark:bg-gray-900/60 rounded-3xl border-2 border-dashed border-gray-300 dark:border-gray-700"
+            >
+              <p className="text-gray-500 dark:text-gray-400 font-medium text-lg">
+                {activeTab === "pending" ? "No pending tasks" : "No completed tasks yet"}
+              </p>
+            </motion.div>
+          )}
         </div>
       </main>
 
